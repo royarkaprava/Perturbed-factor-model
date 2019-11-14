@@ -35,6 +35,7 @@ QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #' @examples
 #'set.seed(1)
 # data generation
+#'
 #' n <- 500
 #' p  <- 21
 #' r  <- 5
@@ -65,11 +66,13 @@ QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #' for(i in 2:grp){
 #'   Qlist[, i] <- array(matrix(rnorm(p^2, Qmean, sd = sqrt(0.0001)), p, p))
 #' }
+#' grpind = rep(1:10, each = 50)
 #' Y <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
 #' fit <- PFA(Y, grpind = rep(1:10, each = 50))
 
 PFA <- function(Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
   n <- ncol(Y)
+  p <- nrow(Y)
   grp <- 1
   if(measureerror){grpind <- 1:n}
   
@@ -81,7 +84,7 @@ PFA <- function(Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, 
   Qmean <- array(diag(p))
   
   # parameters initialization
-  p <- nrow(Y)
+  
   r = p
   nu <- 1
   a1 <- 2
