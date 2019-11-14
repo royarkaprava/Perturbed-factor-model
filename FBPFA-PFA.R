@@ -41,9 +41,6 @@ QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #' r  <- 5
 #' grp <- 10
 #' 
-#' pdmat <- Posdef(n=p, ev=runif(p, 0, 10))
-#' 
-#' pdmat[which(abs(pdmat) < 1)] <- 0
 #' 
 #' eta0 <- matrix(rnorm(r*n), r, n) 
 #' 
