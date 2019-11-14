@@ -3,7 +3,8 @@ library(MASS)
 library(pracma)
 library(expm)
 
-QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+QYprG <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+  p <- nrow(Y)
   temp <- matrix(Ql[, vec[i]], p, p)
   return(temp%*%mat[, i])
 }
@@ -36,7 +37,11 @@ QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #'set.seed(1)
 # data generation
 
-PFA <- function(Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+  QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+    temp <- matrix(Ql[, vec[i]], p, p)
+    return(temp%*%mat[, i])
+  }
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
@@ -261,33 +266,33 @@ PFA <- function(Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, 
 
 ###############Example#################
 
-n <- 500
-p  <- 21
+n1 <- 500
+p1  <- 21
 r  <- 5
 grp <- 10
 
-eta0 <- matrix(rnorm(r*n), r, n)
+eta0 <- matrix(rnorm(r*n1), r, n1)
 
-lambda0           <- matrix(0, p, r)
+lambda0           <- matrix(0, p1, r)
 lambda0[1:5, 1]   <- rnorm(5, mean = 5, sd = 1)
 lambda0[5:9, 2]   <- rnorm(5, mean = 5, sd = 1)
 lambda0[9:13, 3]  <- rnorm(5, mean = 5, sd = 1)
 lambda0[13:17, 4] <- rnorm(5, mean = 5, sd = 1)
 lambda0[17:21, 5] <- rnorm(5, mean = 5, sd = 1)
 
-Y <- matrix(rnorm(p*n, mean = lambda0 %*% eta0, sd = 1), p, n)#matrix(rnorm(p*n, mean = lambda0 %*% eta0, sd = 1), p, n)
-Qlist <- matrix(array(diag(p)), p^2, grp)
-Qmean <- array(1*diag(p))
+Y <- matrix(rnorm(p1*n1, mean = lambda0 %*% eta0, sd = 1), p1, n1)#matrix(rnorm(p*n, mean = lambda0 %*% eta0, sd = 1), p, n)
+Qlist <- matrix(array(diag(p1)), p1^2, grp)
+Qmean <- array(1*diag(p1))
 
 set.seed(100)
-Qlist <- matrix(array(diag(p)), p^2, grp)
-Qmean <- array(1*diag(p))
+Qlist <- matrix(array(diag(p1)), p1^2, grp)
+Qmean <- array(1*diag(p1))
 set.seed(1)
 
 for(i in 2:grp){
-  Qlist[, i] <- array(matrix(rnorm(p^2, Qmean, sd = sqrt(0.0001)), p, p))
+  Qlist[, i] <- array(matrix(rnorm(p1^2, Qmean, sd = sqrt(0.0001)), p1, p1))
 }
 grpind = rep(1:10, each = 50)
-Y <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
+Y <- parallel::mcmapply(1:n1, FUN = QYprG, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
 fit <- PFA(Y, grpind = rep(1:10, each = 50))
 
