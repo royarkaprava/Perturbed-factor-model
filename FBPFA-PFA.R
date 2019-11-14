@@ -3,7 +3,8 @@ library(MASS)
 library(pracma)
 library(expm)
 
-QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+QYprG <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+  p <- nrow(Y)
   temp <- matrix(Ql[, vec[i]], p, p)
   return(temp%*%mat[, i])
 }
@@ -64,10 +65,15 @@ QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #'   Qlist[, i] <- array(matrix(rnorm(p^2, Qmean, sd = sqrt(0.0001)), p, p))
 #' }
 #' grpind = rep(1:10, each = 50)
-#' Y <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
+#' Y <- parallel::mcmapply(1:n, FUN = QYprG, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
 #' fit <- PFA(Y, grpind = rep(1:10, each = 50))
 
-PFA <- function(Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+  QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
+    temp <- matrix(Ql[, vec[i]], p, p)
+    return(temp%*%mat[, i])
+  }
+  
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
