@@ -2,43 +2,6 @@ library(mvtnorm)
 library(MASS)
 library(pracma)
 library(expm)
-OpenBlasThreads::set_num_threads(1)
-
-invfact <- function(lg, n){
-  ret <- diag(p)
-  for(i in 1:n){
-    ret <- ret + lg %^% i
-  }
-  return(ret)
-}
-
-matrixouter <- function(A, B, r, J){
-  nr <- nrow(A)
-  nc <- ncol(B)
-  mat <- matrix(0, nr * nc, r*J)
-  
-  k   <- 1
-  for(i in 1:nc){
-    for(j in 1:nr){
-      mat[k, ] <- outer(A[j, ], B[, i])
-      k        <- k + 1
-    }
-  }
-  return(mat)
-}
-
-matrixouter1 <- function(A, B, r, J){
-  nr <- nrow(A)
-  #nc <- ncol(B)
-  mat <- matrix(0, nr, r*J)
-  
-  k   <- 1
-  for(j in 1:nr){
-    mat[k, ] <- outer(A[j, ], B)
-    k        <- k + 1
-  }
-  return(mat)
-}
 
 QYpr <- function(i, mat = Y){
   temp <- matrix(Qlist[, ceiling(i/50)], p, p)
