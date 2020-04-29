@@ -40,6 +40,7 @@ po <- 1
 Qmean <- array(1*diag(p))
 set.seed(1)
 
+#################Generating the perturbation matrices##########################
 for(i in 2:grp){
   Qlist[, i] <- array(matrix(rnorm(p^2, Qmean, sd = sqrt(0.0001)), p, p))
 }
