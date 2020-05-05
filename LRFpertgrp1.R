@@ -2,6 +2,7 @@ library(mvtnorm)
 library(MASS)
 library(pracma)
 library(expm)
+library(IMIFA)
 
 QYpr <- function(i, mat = Y){
   temp <- matrix(Qlist[, ceiling(i/50)], p, p)
@@ -24,7 +25,7 @@ lambda0[9:13, 3]  <- rnorm(5, mean = 5, sd = 1)
 lambda0[13:17, 4] <- rnorm(5, mean = 5, sd = 1)
 lambda0[17:21, 5] <- rnorm(5, mean = 5, sd = 1)
 
-image(t(lambda0))
+plot_cols(mat2cols(lambda0))
 Y <- matrix(rnorm(p*n, mean = lambda0 %*% eta0, sd = 1), p, n)#matrix(rnorm(p*n, mean = lambda0 %*% eta0, sd = 1), p, n) #t(rmvnorm(n, sigma = solve(pdmat)))#
 #Plambda0 <- diag(p) - lambda0 %*% solve(crossprod(lambda0)) %*% t(lambda0)
 Qlist <- matrix(array(diag(p)), p^2, grp)
@@ -220,7 +221,7 @@ while (itr < Total_itr) {
     u <- runif(1)
     if(u < exp(-1 - itr * 5 * 10^(-4) )){
       temp    <- colMeans(abs(lambda))
-      c <- (which(temp < 1e-4))
+      c <- (which(temp < 1e-2))
       if(r-length(c)<3){c <- NULL}
       if(r < 3) {c <- NULL}
       if(length(c)> 0){
@@ -245,11 +246,11 @@ while (itr < Total_itr) {
     R     <- R + incre
   }
   
-  image(t(lambda))
+  plot_cols(mat2cols(lambda))
   
   var <- lambda %*% diag(sigma2^2) %*% t(lambda) + diag(sigma1^2)
   Ytestn <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Ytest))
-  print(out[itr] <- sum(apply(Ytestn, 2, dmvnorm, sigma = var, log = T)))
+  #print(out[itr] <- sum(apply(Ytestn, 2, dmvnorm, sigma = var, log = T)))
 }
 
 save(out, lambda_p, sigma1_p, sigma2_p, Q_p, QV_p, file = paste("0001QVranperterb100LRFgrp",seed,".rda", sep = ""))
