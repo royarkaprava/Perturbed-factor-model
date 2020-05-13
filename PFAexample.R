@@ -58,7 +58,8 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001
   
   r = p
   nu <- 1
-  a1 <- 2
+  a1 <- 1.5
+  a2 <- 3
   eta.var2 <- rep(0, r)
   var <- eta.var2
   delta <- rnorm(r)
@@ -194,7 +195,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001
     
     for(i in 2:r){
       tauprime1 <- tau / (psi[i])
-      psi[i] <- rgamma(1, a1 + p*(r - i + 1) / 2, 1 + sum(temp1[i:r] * tauprime1[i:r]) / 2)
+      psi[i] <- rgamma(1, a2 + p*(r - i + 1) / 2, 1 + sum(temp1[i:r] * tauprime1[i:r]) / 2)
       tau    <- tauprime1 * psi[i]
     }
     
