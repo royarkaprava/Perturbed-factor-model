@@ -59,8 +59,8 @@ RO <- randortho(p)
 set.seed(seed)
 r = p
 nu <- 1
-a1 <- 1.5
-a2 <- 3
+a1 <- 2.1
+a2 <- 3.1
 eta.var2 <- rep(0, r)
 var <- eta.var2
 delta <- rnorm(r)
