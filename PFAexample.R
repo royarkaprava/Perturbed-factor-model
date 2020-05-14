@@ -37,7 +37,7 @@ QYprG <- function(i, mat = Y, vec = grpind, Ql = Qlist){
 #'set.seed(1)
 # data generation
 
-PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=F, alph= 0.0001, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
