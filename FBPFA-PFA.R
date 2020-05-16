@@ -16,6 +16,7 @@ library(expm)
 #' @param grpind is the vector of group indices. Default is NULL, meaning no multi-group study. 
 #' @param measureerror is the indicator, mentioning if it is the measurement error model in Section 2.2 of the paper
 #' @param FB is the indicator if perturbation parameter alpha is provided or if it is a fully Bayesian approach 
+#' @param Cutoff is the truncation value to remove columns from the loading matrix
 #' @param alph is the preset value of perturbation parameter alpha if it is not FB
 #' @param Total_itr is the total number of iterations of MCMC
 
@@ -30,7 +31,7 @@ library(expm)
 #' @export
 #' @examples
 
-PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-2, alph= 0.0001, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
@@ -225,7 +226,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, alph= 0.0001
       u <- runif(1)
       if(u < exp(-1 - itr * 5 * 10^(-4) )){
         temp    <- colMeans(abs(lambda))
-        c <- (which(temp < 1e-4))
+        c <- (which(temp < Cutoff))
         if(r-length(c)<3){c <- NULL}
         if(r < 3) {c <- NULL}
         if(length(c)> 0){
