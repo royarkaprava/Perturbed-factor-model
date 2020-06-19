@@ -31,7 +31,7 @@ library(expm)
 #' @export
 #' @examples
 
-PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, FB=T, alph= 0.0001, Cutoff = 0, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
@@ -233,28 +233,28 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
     #if(itr %% R==0){
      # u <- runif(1)
       #if(u < exp(-1 - itr * 5 * 10^(-4) )){
-        # temp    <- colMeans(abs(lambda))
-        # c <- (which(temp < Cutoff))
-        # if(r-length(c)<3){c <- NULL}
-        # if(r < 3) {c <- NULL}
-        # if(length(c)> 0){
-        #   r <- r - length(c)
-        #   lambda <- lambda[, -c]
-        #   phi <- phi[, -c]
-        #   tau   <- tau[-c]
-        #   psi   <- psi[-c]
-        #   phi2 <- phi2[, -c]
-        #   tau2   <- tau2[-c]
-        #   psi2   <- psi2[-c]
-        #   tau0   <- tau0[-c]
-        #   psi0   <- psi0[-c]
-        #   eta  <- eta[-c, ]
-        #   epsilon2  <- epsilon2[-c, ]
-        #   eta.var2 <- eta.var2[ -c]
-        #   sigma2 <- eta.var2
-        #   gamma    <- gamma[-c, ]
-        #   delta    <- delta[ - c]
-        # }
+        temp    <- colMeans(abs(lambda))
+        c <- (which(temp < Cutoff))
+        if(r-length(c)<3){c <- NULL}
+        if(r < 3) {c <- NULL}
+        if(length(c)> 0){
+          r <- r - length(c)
+          lambda <- lambda[, -c]
+          phi <- phi[, -c]
+          tau   <- tau[-c]
+          psi   <- psi[-c]
+          phi2 <- phi2[, -c]
+          tau2   <- tau2[-c]
+          psi2   <- psi2[-c]
+          tau0   <- tau0[-c]
+          psi0   <- psi0[-c]
+          eta  <- eta[-c, ]
+          epsilon2  <- epsilon2[-c, ]
+          eta.var2 <- eta.var2[ -c]
+          sigma2 <- eta.var2
+          gamma    <- gamma[-c, ]
+          delta    <- delta[ - c]
+        }
       #}
       #R     <- R + incre
     #}
