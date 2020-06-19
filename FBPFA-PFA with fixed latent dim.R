@@ -73,8 +73,8 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
   psi2 <- c(rgamma(1,5,1), rgamma(r-1, 5, 1))
   tau2 <- exp(cumsum(log(psi2)))
   
-  eta    <- matrix(rnorm(p*n), p, n)
-  lambda <- ginv(tcrossprod(eta)) %*% tcrossprod(eta, Y)
+  eta    <- matrix(rnorm(r*n), r, n)
+  lambda <- t(ginv(tcrossprod(eta)) %*% tcrossprod(eta, Y))
   
   lambdaginv <- ginv(crossprod(lambda)) %*% t(lambda)
   
