@@ -36,7 +36,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
   }
-  
+  no.core <- parallel::detectCores() - 1
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
@@ -144,7 +144,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     QY <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
     Yhatred <- QY - lambda %*% epsilon2
     
-    for(i in 1:r){
+    for(i in 1:p){
       al       <- 0.1 + n /2
       be       <- 0.1 + sum((Yhatred[i, ])^2)/2
       sigma1[i] <- sqrt(1/rgamma(1, al, be))
@@ -196,7 +196,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     }
     
     if(grp>1){
-      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(alphf=alph))
+      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -204,7 +204,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     }
     
     if(measureerror){
-      Qlist[, 1:grp] <- parallel::mcmapply(1:grp, FUN = Qiup, MoreArgs = list(alphf=alph))
+      Qlist[, 1:grp] <- parallel::mcmapply(1:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -251,7 +251,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
       }
       R     <- R + incre
     }
-    Sys.sleep(0.1)
+    #Sys.sleep(0.1)
     # update progress bar
     setTxtProgressBar(pb, itr)
   }
