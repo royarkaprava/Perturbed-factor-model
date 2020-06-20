@@ -37,6 +37,7 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
     return(temp%*%mat[, i])
   }
   
+  no.core <- parallel::detectCores() - 1
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
@@ -145,7 +146,7 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
     QY <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
     Yhatred <- QY - lambda %*% epsilon2
     
-    for(i in 1:r){
+    for(i in 1:p){
       al       <- 0.1 + n /2
       be       <- 0.1 + sum((Yhatred[i, ])^2)/2
       sigma1[i] <- sqrt(1/rgamma(1, al, be))
@@ -157,13 +158,19 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
       sigma2[i] <- sqrt(1/rgamma(1, al, be))
     }
     
-    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
+    Ivarpmei <- eigen(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
+    Ueig     <- Ivarpmei$vectors
+    Deig     <- abs(Ivarpmei$values) + 1e-8
+    
+    var.pm <- Ueig %*% diag(1/abs(Deig)) %*% t(Ueig)
     var.pm <- (var.pm + t(var.pm)) / 2
+    
+    var.pmsq <- Ueig %*% diag(1/sqrt(abs(Deig))) %*% t(Ueig)
     
     mean.etai <- t(lambda/sigma1^2) %*% (QY)
     mean.etai <- var.pm %*% mean.etai
     
-    temp <- apply(mean.etai, 2, FUN=function(x){rmvnorm(1, x, var.pm)})
+    temp <- mean.etai + var.pmsq %*% matrix(rnorm(r*n), r, n)
     epsilon2  <- temp
     
     sigma1_p[[itr]] <- sigma1
@@ -197,7 +204,7 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
     }
     
     if(grp>1){
-      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(alphf=alph))
+      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -205,7 +212,7 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
     }
     
     if(measureerror){
-      Qlist[, 1:grp] <- parallel::mcmapply(1:grp, FUN = Qiup, MoreArgs = list(alphf=alph))
+      Qlist[, 1:grp] <- parallel::mcmapply(1:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -258,7 +265,7 @@ PFA <- function(Y=Y, d = 10, latentdim = NULL, grpind = NULL, measureerror = F, 
       #}
       #R     <- R + incre
     #}
-    Sys.sleep(0.1)
+    #Sys.sleep(0.1)
     # update progress bar
     setTxtProgressBar(pb, itr)
   }
