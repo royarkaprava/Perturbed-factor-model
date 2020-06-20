@@ -161,7 +161,7 @@ while (itr < Total_itr) {
   QY <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
   Yhatred <- QY - lambda %*% epsilon2
   
-  for(i in 1:r){
+  for(i in 1:p){
     al       <- 0.1 + n /2
     be       <- 0.1 + sum((Yhatred[i, ])^2)/2
     sigma1[i] <- sqrt(1/rgamma(1, al, be))
