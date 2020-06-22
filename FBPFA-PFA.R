@@ -61,16 +61,8 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
   eta.var2[r:1] <- rep(1, r)
   phi <- matrix(rgamma(p * r, nu / 2, nu / 2), p, r)
   
-  psi0 <- c(rgamma(1,5,1), rgamma(r-1, 5, 1))
-  tau0 <- exp(cumsum(log(psi0)))
-  
-  psi <- c(rgamma(1,5,1), rgamma(r-1, 5, 1))
+  psi <- rep(1, r)#c(rgamma(1,1,1), rgamma(r-1, 2, 1))
   tau <- exp(cumsum(log(psi)))
-  
-  phi2 <- matrix(rgamma(p * r, nu / 2, nu / 2), p, r)
-  
-  psi2 <- c(rgamma(1,5,1), rgamma(r-1, 5, 1))
-  tau2 <- exp(cumsum(log(psi2)))
   
   eta    <- matrix(rnorm(r*n), r, n)
   lambda <- t(ginv(tcrossprod(eta)) %*% tcrossprod(eta, Y))
