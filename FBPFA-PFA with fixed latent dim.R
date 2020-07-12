@@ -2,6 +2,8 @@ library(mvtnorm)
 library(MASS)
 library(pracma)
 library(expm)
+library(Rcpp)
+library(RcppArmadillo)
 
 
 ################################################Function#################################################### 
