@@ -19,7 +19,9 @@ library(expm)
 #' @param ini.PCA is the indicator to initialize using PCA or not 
 #' @param Cutoff is the truncation value to remove columns from the loading matrix
 #' @param alph is the preset value of perturbation parameter alpha if it is not FB
-#' @param Window is the indicator to check if the system running is window or linux, parallized only for linux
+#' @param no.core is to specify number of cores for mcmapply() in linux, windows it should be 1
+#' @param Thin is the an integer to specify thinig of postburn sample
+#' @param burn is the burn length of posterior samples, multiple of thin
 #' @param Total_itr is the total number of iterations of MCMC
 
 #' @return List of posterior samples.  = lambda_p,  = eta_p, Errorsigma = sigma1_p,  = sigma2_p, = alph_p \cr
@@ -33,14 +35,12 @@ library(expm)
 #' @export
 #' @examples
 Rcpp::sourceCpp('PFA.cpp')
-PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, Window = T, Total_itr = 5000){
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, no.core = 1, Thin= 10, burn = 10, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
   }
-  no.core <- parallel::detectCores() - 1
   
-  if(Window){no.core = 1}
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
@@ -174,12 +174,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, C
     temp <- apply(mean.etai, 2, FUN=function(x){rmvnorm(1, x, var.pm)})
     epsilon2  <- temp
     
-    sigma1_p[[itr]] <- sigma1
-    sigma2_p[[itr]] <- sigma2
-    
     eta <- epsilon2
-    
-    eta_p[[itr]] <- eta
       
     for(i in 1:r){
       mean.lami <- rowSums((QY - lambda[, -i] %*% eta[ - i, ])*matrix(eta[i, ], p, n, byrow=T)/sigma1^2)
@@ -208,16 +203,12 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, C
       Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(le=lambda%*%eta), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
-      
-      Q_p[[itr]] <- Qlist
     }
     
     if(measureerror){
       Qlist[, 1:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(le=lambda%*%eta), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
-      
-      Q_p[[itr]] <- Qlist
     }
     
     if(FB){
@@ -227,10 +218,19 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, C
       alph       <- (1/rgamma(1, al, be))
     }
     
-    alph_p[itr] <- alph
     eta.var2[r:1] <- sigma2[r:1]^2
     
-    lambda_p[[itr]] <- lambda
+    if(itr > burn){
+      BI <- burn / Thin
+      if(itr %% Thin == 0){
+        sigma1_p[[itr/Thin - BI]] <- sigma1
+        sigma2_p[[itr/Thin - BI]] <- sigma2
+        alph_p[itr/Thin - BI]     <- alph
+        eta_p[[itr/Thin - BI]]    <- eta
+        Q_p[[itr/Thin - BI]]      <- Qlist
+        lambda_p[[itr/Thin - BI]] <- lambda 
+      } 
+    }
     
     if(itr %% R==0){
       u <- runif(1)
