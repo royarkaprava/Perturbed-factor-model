@@ -296,5 +296,4 @@ for(i in 2:grp){
 }
 grpind = rep(1:10, each = 50)
 Y <- parallel::mcmapply(1:n1, FUN = QYprG, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
-fit <- PFA(Y, grpind = rep(1:10, each = 50))
-
+fit <- PFA(Y, grpind = rep(1:10, each = 50), ini.PCA = F)
