@@ -15,9 +15,11 @@ library(expm)
 #' @param d is the parameter of the prior of the latent factor's variance such that eta_{ijl}~N(0,sigma_{l}) and sigma_l~IG(d, 0.1)
 #' @param grpind is the vector of group indices. Default is NULL, meaning no multi-group study. 
 #' @param measureerror is the indicator, mentioning if it is the measurement error model in Section 2.2 of the paper
-#' @param FB is the indicator if perturbation parameter alpha is provided or if it is a fully Bayesian approach 
+#' @param FB is the indicator if perturbation parameter alpha is provided or if it is a fully Bayesian approach
+#' @param ini.PCA is the indicator to initialize using PCA or not 
 #' @param Cutoff is the truncation value to remove columns from the loading matrix
 #' @param alph is the preset value of perturbation parameter alpha if it is not FB
+#' @param Window is the indicator to check if the system running is window or linux, parallized only for linux
 #' @param Total_itr is the total number of iterations of MCMC
 
 #' @return List of posterior samples.  = lambda_p,  = eta_p, Errorsigma = sigma1_p,  = sigma2_p, = alph_p \cr
@@ -30,13 +32,15 @@ library(expm)
 #'
 #' @export
 #' @examples
-
-PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-2, alph= 0.0001, Total_itr = 5000){
+Rcpp::sourceCpp('PFA.cpp')
+PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, Window = T, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
   }
   no.core <- parallel::detectCores() - 1
+  
+  if(Window){no.core = 1}
   n <- ncol(Y)
   p <- nrow(Y)
   grp <- 1
@@ -61,19 +65,34 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
   eta.var2[r:1] <- rep(1, r)
   phi <- matrix(rgamma(p * r, nu / 2, nu / 2), p, r)
   
-  psi <- rep(1, r)#c(rgamma(1,1,1), rgamma(r-1, 2, 1))
+  psi <- c(rgamma(1,1,1), rgamma(r-1, 2, 1))
   tau <- exp(cumsum(log(psi)))
   
   eta    <- matrix(rnorm(r*n), r, n)
-  lambda <- t(ginv(tcrossprod(eta)) %*% tcrossprod(eta, Y))
-  
+  lambda <- Y %*% ginv(crossprod(Y)) %*% t(Y)
+  eta <- ginv(crossprod(lambda)) %*% (crossprod(lambda, Y))
   lambdaginv <- ginv(crossprod(lambda)) %*% t(lambda)
   
-  gamma <- lambdaginv
+  gamma <- lambdaginv 
   
-  sigma1 <- apply(Y - lambda %*% eta, 1, sd)
+  if(ini.PCA){
+    svY    <- svd(Y)
+    lambda <- svY$u %*% diag(svY$d)
+    lambda <- lambda[, 1:r]
+    eta    <- t(svY$v)
+    eta    <- eta[1:r, ]
+    
+    tau <- (1/svY$d[1:r])^2
+    psi <- log(tau)
+    psi <- c(psi[1], psi[2:r]-psi[1:(r-1)])
+    psi <- exp(psi)
+    
+    gamma <- matrix(0, r, p)
+  }
   
-  sigma2 <- apply(eta - gamma %*% Y, 1, sd) 
+  sigma1 <- apply(Y - lambda %*% eta, 1, sd) 
+  
+  sigma2 <- apply(eta - gamma %*% Y, 1, sd)
   
   Yhat  <- lambda %*% eta
   for(i in 1:p){
@@ -113,18 +132,16 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
   Q_p <- list()
   alph <- alph
   alph_p <- rep(0, Total_itr)
-  Qiup <- function(i, alphf){
+  Qiup <- function(i, le){
     Qtemp    <- matrix(Qlistmat[, i], p, p)
     index <- which(grpind==i)
-    for(j in 1:p){
-      Qmean    <- rep(0, p)
-      Qmean[j] <- 1
-      mean.lami <- -(rowSums((Qtemp[, -j]%*%Y[-j, index] - lambda %*% eta[, index])*matrix(Y[j, index], p, length(index), byrow = T))/sigma1^2) + Qmean/alphf
-      var.lami  <- 1/(sum(Y[j, index]^2)/sigma1^2 + rep(1/alphf, p)) #phi[, i]*tau[i]) #rep(1/100, p)))
-      mean.lami <- var.lami * mean.lami
-      
-      Qtemp[, j] <- rnorm(p, mean.lami, sqrt(var.lami))
-    }
+    YG   <- Y[, index]
+    YG2  <- YG^2
+    sigmaSq <- sigma1^2
+    alphaf  <- alph
+    leG     <- le[, index]
+    
+    QiupC(Qtemp, YG, YG2, leG, sigmaSq, alphaf)
     
     return(Qtemp)
   }
@@ -188,7 +205,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     }
     
     if(grp>1){
-      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
+      Qlist[, 2:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(le=lambda%*%eta), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -196,7 +213,7 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
     }
     
     if(measureerror){
-      Qlist[, 1:grp] <- parallel::mcmapply(1:grp, FUN = Qiup, MoreArgs = list(alphf=alph), mc.cores = no.core)
+      Qlist[, 1:grp] <- parallel::mcmapply(2:grp, FUN = Qiup, MoreArgs = list(le=lambda%*%eta), mc.cores = no.core)
       
       Qlistmat <- (Qlist)
       
@@ -246,4 +263,3 @@ PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, Cutoff = 1e-
   
   return(list(Loading = lambda_p, Latent = eta_p, Errorsigma = sigma1_p, Latentsigma = sigma2_p, Pertmat = Q_p, Alpha = alph_p))
 }
-
