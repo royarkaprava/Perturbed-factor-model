@@ -85,6 +85,19 @@ lambdaginv <- ginv(crossprod(lambda)) %*% t(lambda)
 
 gamma <- lambdaginv 
 
+svY    <- svd(Y)
+lambda <- svY$u %*% diag(svY$d)
+lambda <- lambda[, 1:r]
+eta    <- t(svY$v)
+eta    <- eta[1:r, ]
+
+tau <- (1/svY$d[1:r])^2
+psi <- log(tau)
+psi <- c(psi[1], psi[2:r]-psi[1:(r-1)])
+psi <- exp(psi)
+
+gamma <- matrix(0, r, p)
+
 sigma1 <- apply(Y - lambda %*% eta, 1, sd) 
 
 sigma2 <- apply(eta - gamma %*% Y, 1, sd)
