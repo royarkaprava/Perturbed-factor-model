@@ -37,7 +37,7 @@ library(RcppArmadillo)
 #' @export
 #' @examples
 Rcpp::sourceCpp('PFA.cpp')
-PFA <- function(Y=Y, d = 10, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, no.core = 1, Thin= 10, burn = 10, Total_itr = 5000){
+PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, no.core = 1, Thin= 10, burn = 10, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
     return(temp%*%mat[, i])
