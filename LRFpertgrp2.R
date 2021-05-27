@@ -182,7 +182,7 @@ while (itr < Total_itr) {
   
  
   for(i in 1:r){
-    al       <- 100 + n /2
+    al       <- 10 + n /2
     be       <- 0.1 + sum((epsilon2[i, ])^2)/2
     sigma2[i] <- sqrt(1/rgamma(1, al, be))
   }
