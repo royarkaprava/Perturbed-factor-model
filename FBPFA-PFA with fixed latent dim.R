@@ -36,7 +36,7 @@ library(RcppArmadillo)
 #'
 #' @export
 #' @examples
-Rcpp::sourceCpp('PFA.cpp')
+#Rcpp::sourceCpp('PFA.cpp')
 PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F, FB=T, alph= 0.0001,  ini.PCA=T, Cutoff = 0, no.core = 1, Thin= 10, burn = 10, Total_itr = 5000){
   QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, vec[i]], p, p)
@@ -203,9 +203,9 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
     tau    <- tauprime1 * psi[1]
     
     for(i in 2:r){
-      tauprime1 <- tau / (psi[i])
+      tauprime1[i:r] <- tau[i:r] / (psi[i])
       psi[i] <- rgamma(1, a2 + p*(r - i + 1) / 2, 1 + sum(temp1[i:r] * tauprime1[i:r]) / 2)
-      tau    <- tauprime1 * psi[i]
+      tau[i:r]    <- tauprime1[i:r] * psi[i]
     }
     
     if(grp>1){
