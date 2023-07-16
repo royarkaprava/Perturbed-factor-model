@@ -196,9 +196,9 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     tau    <- tauprime1 * psi[1]
     
     for(i in 2:r){
-      tauprime1 <- tau / (psi[i])
+      tauprime1[i:r] <- tau[i:r] / (psi[i])
       psi[i] <- rgamma(1, a2 + p*(r - i + 1) / 2, 1 + sum(temp1[i:r] * tauprime1[i:r]) / 2)
-      tau    <- tauprime1 * psi[i]
+      tau[i:r]    <- tauprime1[i:r] * psi[i]
     }
     
     if(grp>1){
