@@ -148,7 +148,7 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
     
     return(Qtemp)
   }
-  
+  sigeta <- 1
   Qmeanmat <- matrix(array(1*diag(p)), p^2, grp)
   pb <- txtProgressBar(min = itr, max = Total_itr, style = 3)
   while (itr < Total_itr) {
@@ -164,9 +164,15 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
     
     for(i in 1:r){
       al       <- d + n /2
-      be       <- 0.1 + sum((epsilon2[i, ])^2)/2
+      be       <- 0.1 + sum((epsilon2[i, ])^2)/2/sigeta^2
       sigma2[i] <- sqrt(1/rgamma(1, al, be))
     }
+    
+    al       <- 0.1 + length(epsilon2) /2
+    be       <- 0.1 + sum((epsilon2/sigma2)^2)/2
+    sigeta   <- sqrt(1/rgamma(1, al, be))
+    
+    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
     
     Ivarpmei <- eigen(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
     Ueig     <- Ivarpmei$vectors
@@ -233,7 +239,7 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
       BI <- burn / Thin
       if(itr %% Thin == 0){
         sigma1_p[[itr/Thin - BI]] <- sigma1
-        sigma2_p[[itr/Thin - BI]] <- sigma2
+        sigma2_p[[itr/Thin - BI]] <- sigma2*sigeta
         alph_p[itr/Thin - BI]     <- alph
         eta_p[[itr/Thin - BI]]    <- eta
         Q_p[[itr/Thin - BI]]      <- Qlist
@@ -246,6 +252,7 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
     #print(mean((var-covmat)^2))
     
     #image(t(lambda))
+    #if(itr %% 1 == 0) fields::image.plot(t(lambda%*%diag(sigma2)))
     
     #if(itr %% R==0){
      # u <- runif(1)

@@ -148,6 +148,7 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     return(Qtemp)
   }
 
+  sigeta <- 1
   Qmeanmat <- matrix(array(1*diag(p)), p^2, grp)
   pb <- txtProgressBar(min = itr, max = Total_itr, style = 3)
   while (itr < Total_itr) {
@@ -163,11 +164,15 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     
     for(i in 1:r){
       al       <- d + n /2
-      be       <- 0.1 + sum((epsilon2[i, ])^2)/2
+      be       <- 0.1 + sum((epsilon2[i, ])^2)/2/sigeta^2
       sigma2[i] <- sqrt(1/rgamma(1, al, be))
     }
     
-    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
+    al       <- 0.1 + length(epsilon2) /2
+    be       <- 0.1 + sum((epsilon2/sigma2)^2)/2
+    sigeta   <- sqrt(1/rgamma(1, al, be))
+    
+    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
     var.pm <- (var.pm + t(var.pm)) / 2
     
     mean.etai <- t(lambda/sigma1^2) %*% (QY)
@@ -226,7 +231,7 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
       BI <- burn / Thin
       if(itr %% Thin == 0){
         sigma1_p[[itr/Thin - BI]] <- sigma1
-        sigma2_p[[itr/Thin - BI]] <- sigma2
+        sigma2_p[[itr/Thin - BI]] <- sigma2*sigeta
         alph_p[itr/Thin - BI]     <- alph
         eta_p[[itr/Thin - BI]]    <- eta
         Q_p[[itr/Thin - BI]]      <- Qlist

@@ -157,6 +157,7 @@ Qiup <- function(i, QVf){
   
   return(Qtemp)
 }
+sigeta <- 1
 out <- array(0, Total_itr)
 Qmeanmat <- matrix(array(1*diag(p)), p^2, grp)
 while (itr < Total_itr) {
@@ -172,11 +173,16 @@ while (itr < Total_itr) {
  
   for(i in 1:r){
     al       <- 100 + n /2
-    be       <- 0.1 + sum((epsilon2[i, ])^2)/2
+    be       <- 0.1 + sum((epsilon2[i, ])^2)/2/sigeta^2
     sigma2[i] <- sqrt(1/rgamma(1, al, be))
   }
-
-  var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
+  
+  al       <- 0.1 + length(epsilon2) /2
+  be       <- 0.1 + sum((epsilon2/sigma2)^2)/2
+  sigeta   <- sqrt(1/rgamma(1, al, be))
+  
+  var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
+  
   var.pm <- (var.pm + t(var.pm)) / 2
   
   mean.etai <- t(lambda/sigma1^2) %*% (QY)
@@ -262,7 +268,7 @@ while (itr < Total_itr) {
   
   plot_cols(mat2cols(lambda))
   
-  var <- lambda %*% diag(sigma2^2) %*% t(lambda) + diag(sigma1^2)
+  var <- lambda %*% diag(sigma2^2*sigeta^2) %*% t(lambda) + diag(sigma1^2)
   Ytestn <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Ytest))
   #print(out[itr] <- sum(apply(Ytestn, 2, dmvnorm, sigma = var, log = T)))
 }
