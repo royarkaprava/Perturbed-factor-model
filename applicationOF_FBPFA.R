@@ -38,6 +38,27 @@ for(i in 2:grp){
 grpind = rep(1:10, each = 50)
 Y <- parallel::mcmapply(1:n, FUN = QYprG, MoreArgs = list(mat=Y)) #matrix(Q %*% array(Y), p, n)
 fit <- PFA(Y, grpind = rep(1:10, each = 50), ini.PCA = T)
-sigma2p <- Reduce('+', fit$Latentsigma[200:499])/length(fit$Latentsigma[200:499])
-lambdap <- (Reduce('+', fit$Loading[200:499])/length(fit$Latentsigma[200:499])) %*% diag(sigma2p)
+sigma2p <- Reduce('+', fit$Latentsigma[1:1000])/length(fit$Latentsigma[1:1000])
+lambdap <- (Reduce('+', fit$Loading[1:1000])/length(fit$Latentsigma[1:1000])) %*% diag(sigma2p)
 fields::image.plot(t(lambdap))
+
+####Posterior samples of Shared variance
+sharevar <- list()
+for(i in 1:1000){
+  sharevar[[i]] <- fit$Loading[i]%%diag(fit$Latentsigma[i]^2)%%t(fit$Loading[i]) + diag(fit$Errorsigma[i]^2)
+}
+
+######Posterior samples of Study specific variances
+grpind = rep(1:10, each = 50)
+QSpr <- function(i, mat, vec = grpind, Ql = Qlist){
+  temp <- solve(matrix(Ql[, vec[i]], p, p))
+  return(temp%*%mat%*%t(temp))
+}
+
+vars <- list()
+for(i in 1:1000){
+  Qlist <- fit$Pertmat[[i]]
+  
+  vars[[i]] <- parallel::mcmapply(1:n, FUN = QSpr, MoreArgs = list(mat=sharevar[[i]], vec = grpind, Ql = Qlist))
+  
+}
