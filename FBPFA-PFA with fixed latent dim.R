@@ -174,7 +174,7 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
     
     var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
     
-    Ivarpmei <- eigen(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
+    Ivarpmei <- eigen(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
     Ueig     <- Ivarpmei$vectors
     Deig     <- abs(Ivarpmei$values) + 1e-8
     
