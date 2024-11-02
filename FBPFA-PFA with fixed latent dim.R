@@ -38,9 +38,9 @@ library(RcppArmadillo)
 #' @examples
 #Rcpp::sourceCpp('PFA.cpp')
 PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F, FB=T, alph= 0.0001,  ini.PCA=T, Cutoff = 0, no.core = 1, Thin= 10, burn = 5000, Total_itr = 15000){
-  QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
-    temp <- matrix(Ql[, vec[i]], p, p)
-    return(temp%*%mat[, i])
+  QYpr <- function(g, mat = Y, vec = grpind, Ql = Qlist){
+    temp <- matrix(Ql[, g], p, p)
+    return(temp%*%mat[, which(grpind==g)])
   }
   
   n <- ncol(Y)
@@ -151,9 +151,14 @@ PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F,
   sigeta <- 1
   Qmeanmat <- matrix(array(1*diag(p)), p^2, grp)
   pb <- txtProgressBar(min = itr, max = Total_itr, style = 3)
+  QY <- Y
   while (itr < Total_itr) {
     itr <- itr + 1
-    QY <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
+    temp <- parallel::mcmapply(1:grp, FUN = QYpr, SIMPLIFY=F, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
+    
+    for(g in 1:grp){
+      QY[, which(grpind==g)] <- temp[[g]]
+    }
     Yhatred <- QY - lambda %*% epsilon2
     
     for(i in 1:p){
