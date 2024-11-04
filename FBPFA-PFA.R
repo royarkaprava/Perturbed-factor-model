@@ -38,9 +38,9 @@ library(RcppArmadillo)
 #' @examples
 Rcpp::sourceCpp('PFA.cpp')
 PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, Cutoff = 1e-2, alph= 0.0001, no.core = 1, Thin= 10, burn = 10, Total_itr = 5000){
-  QYpr <- function(i, mat = Y, vec = grpind, Ql = Qlist){
-    temp <- matrix(Ql[, vec[i]], p, p)
-    return(temp%*%mat[, i])
+  QYpr <- function(g, mat = Y, vec = grpind, Ql = Qlist){
+    temp <- matrix(Ql[, g], p, p)
+    return(temp%*%mat[, which(grpind==g)])
   }
   
   n <- ncol(Y)
@@ -147,13 +147,32 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     
     return(Qtemp)
   }
-
-  sigeta <- 1
+  
+  QiupLR <- function(i, le){
+    Qtemp    <- matrix(Qlistmat[, i], p, p)
+    index <- which(grpind==i)
+    YG   <- Y[, index]
+    YG2  <- YG^2
+    sigmaSq <- sigma1^2
+    alphaf  <- alph
+    leG     <- le[, index]
+    
+    QiupC(Qtemp, YG, YG2, leG, sigmaSq, alphaf)
+    
+    return(Qtemp)
+  }
+  
+  
   Qmeanmat <- matrix(array(1*diag(p)), p^2, grp)
   pb <- txtProgressBar(min = itr, max = Total_itr, style = 3)
+  QY <- Y
   while (itr < Total_itr) {
     itr <- itr + 1
-    QY <- parallel::mcmapply(1:n, FUN = QYpr, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
+    temp <- parallel::mcmapply(1:grp, FUN = QYpr, SIMPLIFY=F, MoreArgs = list(mat=Y, vec = grpind, Ql = Qlist))
+    
+    for(g in 1:grp){
+      QY[, which(grpind==g)] <- temp[[g]]
+    }
     Yhatred <- QY - lambda %*% epsilon2
     
     for(i in 1:p){
@@ -164,15 +183,11 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     
     for(i in 1:r){
       al       <- d + n /2
-      be       <- 0.1 + sum((epsilon2[i, ])^2)/2/sigeta^2
+      be       <- 0.1 + sum((epsilon2[i, ])^2)/2
       sigma2[i] <- sqrt(1/rgamma(1, al, be))
     }
     
-    al       <- 0.1 + length(epsilon2) /2
-    be       <- 0.1 + sum((epsilon2/sigma2)^2)/2
-    sigeta   <- sqrt(1/rgamma(1, al, be))
-    
-    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2/sigeta^2))
+    var.pm <- ginv(crossprod(lambda / sigma1) + diag(1 / sigma2^2))
     var.pm <- (var.pm + t(var.pm)) / 2
     
     mean.etai <- t(lambda/sigma1^2) %*% (QY)
@@ -182,7 +197,7 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     epsilon2  <- temp
     
     eta <- epsilon2
-      
+    
     for(i in 1:r){
       mean.lami <- rowSums((QY - lambda[, -i] %*% eta[ - i, ])*matrix(eta[i, ], p, n, byrow=T)/sigma1^2)
       var.lami  <- 1/(sum(eta[i, ]^2)/sigma1^2 + phi[, i]*tau[i])
@@ -201,9 +216,9 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
     tau    <- tauprime1 * psi[1]
     
     for(i in 2:r){
-      tauprime1[i:r] <- tau[i:r] / (psi[i])
+      tauprime1 <- tau / (psi[i])
       psi[i] <- rgamma(1, a2 + p*(r - i + 1) / 2, 1 + sum(temp1[i:r] * tauprime1[i:r]) / 2)
-      tau[i:r]    <- tauprime1[i:r] * psi[i]
+      tau    <- tauprime1 * psi[i]
     }
     
     if(grp>1){
@@ -231,7 +246,7 @@ PFA <- function(Y=Y, d = 100, grpind = NULL, measureerror = F, FB=T, ini.PCA=T, 
       BI <- burn / Thin
       if(itr %% Thin == 0){
         sigma1_p[[itr/Thin - BI]] <- sigma1
-        sigma2_p[[itr/Thin - BI]] <- sigma2*sigeta
+        sigma2_p[[itr/Thin - BI]] <- sigma2
         alph_p[itr/Thin - BI]     <- alph
         eta_p[[itr/Thin - BI]]    <- eta
         Q_p[[itr/Thin - BI]]      <- Qlist
