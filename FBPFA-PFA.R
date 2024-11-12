@@ -13,7 +13,7 @@ library(RcppArmadillo)
 #' @references Roy et. al. (2019)
 #'     "Perturbed factor analysis: Improving generalizability across studies" arXiv 
 #'
-#' @param Y is the data matrix with each column, representing one replication (not centered)
+#' @param Y is the data matrix with each column, representing one replication
 #' @param d is the parameter of the prior of the latent factor's variance such that eta_{ijl}~N(0,sigma_{l}) and sigma_l~IG(d, 0.1)
 #' @param grpind is the vector of group indices. Default is NULL, meaning no multi-group study. 
 #' @param measureerror is the indicator, mentioning if it is the measurement error model in Section 2.2 of the paper
