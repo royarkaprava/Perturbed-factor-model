@@ -13,7 +13,7 @@ library(RcppArmadillo)
 #' @references Roy et. al. (2019)
 #'     "Perturbed factor analysis: Improving generalizability across studies" arXiv 
 #'
-#' @param Y is the data matrix with each column, representing one replication (not centered)
+#' @param Y is the data matrix with each column, representing one replication
 #' @param d is the parameter of the prior of the latent factor's variance such that eta_{ijl}~N(0,sigma_{l}) and sigma_l~IG(d, 0.1)
 #' @param grpind is the vector of group indices. Default is NULL, meaning no multi-group study. 
 #' @param measureerror is the indicator, mentioning if it is the measurement error model in Section 2.2 of the paper
@@ -36,7 +36,7 @@ library(RcppArmadillo)
 #'
 #' @export
 #' @examples
-#Rcpp::sourceCpp('PFA.cpp')
+Rcpp::sourceCpp('PFA.cpp')
 PFA <- function(Y=Y, d = 100, latentdim = NULL, grpind = NULL, measureerror = F, FB=T, alph= 0.0001,  ini.PCA=T, Cutoff = 0, no.core = 1, Thin= 10, burn = 5000, Total_itr = 15000){
   QYpr <- function(g, mat = Y, vec = grpind, Ql = Qlist){
     temp <- matrix(Ql[, g], p, p)
